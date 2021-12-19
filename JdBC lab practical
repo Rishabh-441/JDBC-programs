@@ -1,0 +1,57 @@
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+class CheckReg{
+    public static boolean check(String str){
+        return Pattern.matches("[a-zA-Z0-9-_]+@(gla\\.com)", str);
+    }
+}
+class InvalidInputException extends Exception{
+    public InvalidInputException() {
+        super("Invalid input!!");
+    }
+    public InvalidInputException(String message) {
+        super(message);
+    }
+}
+public class ValidMails {
+    public static void main(String[] args) throws InvalidInputException, ClassNotFoundException, SQLException {
+        Scanner sc = new Scanner(System.in);
+        String s = sc.nextLine();
+        TreeSet<String> narr = new TreeSet<>();
+        Pattern p = Pattern.compile("[a-zA-Z0-9-_]+@[a-zA-Z]+(\\.com)");
+        Matcher m = p.matcher(s);
+        while(m.find()){
+            narr.add(m.group());
+        }
+
+        System.out.println(narr);
+        narr = (TreeSet<String>) narr.descendingSet();
+        if (narr.isEmpty()){
+            throw new InvalidInputException();
+        }
+        System.out.println(narr);
+
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mtest", "root", "");
+        String query = "insert into info (email) values (?)";
+        PreparedStatement ps = con.prepareStatement(query);
+        try(con;ps) {
+            for (var x : narr) {
+                if( CheckReg.check(x)) {
+                    ps.setString(1, x);
+                    ps.executeUpdate();
+                }
+            }
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery("select * from info");
+            while (rs.next()){
+                System.out.println(rs.getInt(1) + " " + rs.getString(2));
+            }
+        }
+    }
+}
